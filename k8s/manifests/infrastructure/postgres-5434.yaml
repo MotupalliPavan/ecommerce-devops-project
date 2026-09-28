@@ -1,80 +1,74 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: postgres-user
   labels:
-    app: postgres
-  name: postgres
+    app: postgres-user
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: postgres-user
   template:
     metadata:
       labels:
-        app: postgres
+        app: postgres-user
     spec:
       containers:
-        - image: postgres:latest
-          name: postgres
+        - name: postgres
+          image: postgres:17
           ports:
-            - containerPort: 5434
+            - containerPort: 5432
           env:
-            - name : POSTGRES_USER
-              value : "admin"
-            - name : POSTGRES_PASSWORD
+            - name: POSTGRES_USER
+              value: "admin"
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: POSTGRES_PASSWORD
                   name: postgres-secrets
-            - name : POSTGRES_DB
-              value : "inventory_service"
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: "user_service"
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgres-data
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: postgres-pvc
+            claimName: postgres-user-pvc
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app: postgres
-  name: postgres
+  name: postgres-user
 spec:
+  selector:
+    app: postgres-user
   ports:
     - port: 5434
+      targetPort: 5432
       protocol: TCP
-      targetPort: 5434
-  selector:
-    app: postgres
----
-apiVersion: v1
-data:
-  POSTGRES_PASSWORD: YWRtaW4=
-kind: Secret
-metadata:
-  name: postgres-secrets
+
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: postgres-pv-2
+  name: postgres-user-pv
 spec:
-  storageClassName: 'standard'
+  storageClassName: standard
   accessModes:
     - ReadWriteOnce
   capacity:
     storage: 1Gi
   hostPath:
-    path: /data/postgresql-5434
+    path: /data/postgresql-user
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-pvc-2
+  name: postgres-user-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -82,3 +76,4 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: standard
+

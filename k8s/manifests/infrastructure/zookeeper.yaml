@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: zookeeper
-          image: confluentinc/cp-zookeeper:latest
+          image: confluentinc/cp-zookeeper:7.7.7
           ports:
             - containerPort: 2181
           env:
@@ -45,7 +45,8 @@ metadata:
 spec:
   ports:
     - port: 2181
-      protocol: TCP
       targetPort: 2181
+      protocol: TCP
   selector:
     app: zookeeper
+

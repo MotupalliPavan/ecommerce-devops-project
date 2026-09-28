@@ -20,7 +20,8 @@ spec:
     spec:
       containers:
         - name: inventory-service
-          image: benabbouosama/spring-boot-microservices-e-commerce-project:inventory-service-latest
+          image: ecommerce/inventory-service:v1
+          imagePullPolicy: Never
           ports:
             - containerPort: 8082
           env:

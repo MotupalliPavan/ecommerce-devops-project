@@ -20,7 +20,8 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: benabbouosama/spring-boot-microservices-e-commerce-project:api-gateway-latest
+          image: ecommerce/api-gateway:v1
+          imagePullPolicy: Never
           ports:
             - containerPort: 8090
           env:

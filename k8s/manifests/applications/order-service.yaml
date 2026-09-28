@@ -20,7 +20,8 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: benabbouosama/spring-boot-microservices-e-commerce-project:order-service-latest
+          image: ecommerce/order-service:v1
+          imagePullPolicy: Never
           ports:
             - containerPort: 8081
           env:

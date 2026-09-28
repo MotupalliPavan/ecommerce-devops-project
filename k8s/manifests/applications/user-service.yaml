@@ -20,7 +20,8 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: benabbouosama/spring-boot-microservices-e-commerce-project:user-service-latest
+          image: ecommerce/user-service:v1
+          imagePullPolicy: Never
           ports:
             - containerPort: 8083
           env:

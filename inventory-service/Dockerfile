@@ -1,20 +1,9 @@
-# Stage 1: Build the project
-FROM maven:3.9.8-eclipse-temurin-21 AS build
-WORKDIR /build
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -Dmaven.test.skip=true
+FROM eclipse-temurin:21-jre
 
-# Stage 2: Create the runtime image
-FROM eclipse-temurin:21-jdk
-ARG PROJECT_VERSION=0.0.1
-WORKDIR /home/app
+WORKDIR /app
 
-# Copy the built JAR from the previous stage
-COPY --from=build /build/target/inventory-service-${PROJECT_VERSION}-SNAPSHOT.jar inventory-service.jar
+COPY target/*.jar app.jar
 
-# Expose port
 EXPOSE 8082
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "inventory-service.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

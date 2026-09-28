@@ -20,12 +20,21 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: benabbouosama/spring-boot-microservices-e-commerce-project:product-service-latest
+          image: ecommerce/product-service:v1
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "prod"
+
 ---
 apiVersion: v1
 kind: Service

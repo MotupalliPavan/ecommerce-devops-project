@@ -20,7 +20,8 @@ spec:
     spec:
       containers:
         - name: email-service
-          image: benabbouosama/spring-boot-microservices-e-commerce-project:email-service-latest
+          image: ecommerce/email-service:v1
+          imagePullPolicy: Never
           ports:
             - containerPort: 8084
           env:

@@ -14,34 +14,68 @@ spec:
       labels:
         app: filebeat
     spec:
+      serviceAccountName: filebeat
+
       containers:
         - name: filebeat
           image: docker.elastic.co/beats/filebeat:7.2.0
-          command: ["filebeat", "-e", "-strict.perms=false"]
+
+          command:
+            - filebeat
+            - -e
+            - -strict.perms=false
+
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+
           volumeMounts:
             - name: filebeat-config
               mountPath: /usr/share/filebeat/filebeat.yml
               subPath: filebeat.yml
               readOnly: true
-            - name: docker-containers
+
+            - name: varlogcontainers
+              mountPath: /var/log/containers
+              readOnly: true
+
+            - name: varlogpods
+              mountPath: /var/log/pods
+              readOnly: true
+
+            - name: varlibdockercontainers
               mountPath: /var/lib/docker/containers
               readOnly: true
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
-              readOnly: true
+
             - name: filebeat-data
               mountPath: /usr/share/filebeat/data
-              readOnly: false
+
       volumes:
         - name: filebeat-config
           configMap:
             name: filebeat-config
-        - name: docker-containers
+
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+            type: Directory
+
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+            type: Directory
+
+        - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
-        - name: docker-socket
-          hostPath:
-            path: /var/run/docker.sock
+            type: DirectoryOrCreate
+
         - name: filebeat-data
           emptyDir: {}
 
@@ -52,26 +86,18 @@ metadata:
   name: filebeat-config
 data:
   filebeat.yml: |
-    filebeat.autodiscover:
-      providers:
-        - type: docker
-          labels.dedot: true
-          templates:
-            - condition:
-                contains:
-                  container.labels.collect_logs_with_filebeat: "true"
-              config:
-                - type: container
-                  format: docker
-                  paths:
-                    - "/var/lib/docker/containers/${data.docker.container.id}/*.log"
-                  processors:
-                    - decode_json_fields:
-                        when.equals:
-                          docker.container.labels.decode_log_event_to_json_object: "true"
-                        fields: ["message"]
-                        target: ""
-                        overwrite_keys: true
+    filebeat.inputs:
+      - type: container
+        enabled: true
+        paths:
+          - /var/log/containers/*.log
+
+    processors:
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
 
     output.logstash:
       hosts: ["logstash:5044"]
@@ -87,8 +113,46 @@ metadata:
     app: filebeat
 spec:
   ports:
-    - port: 5044
+    - name: filebeat
+      port: 5044
       protocol: TCP
       targetPort: 5044
   selector:
     app: filebeat
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: filebeat
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: default
