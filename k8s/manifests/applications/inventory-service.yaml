@@ -18,10 +18,12 @@ spec:
         collect_logs_with_filebeat: "true"
         decode_log_event_to_json_object: "true"
     spec:
+      imagePullSecrets:
+        - name: ecr-registry-secret
       containers:
         - name: inventory-service
-          image: ecommerce/inventory-service:v1
-          imagePullPolicy: Never
+          image: 289984444906.dkr.ecr.us-east-1.amazonaws.com/ecommerce/inventory-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8082
           env:
