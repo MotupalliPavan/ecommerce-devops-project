@@ -22,7 +22,7 @@ spec:
         - name: ecr-registry-secret
       containers:
         - name: product-service
-          image: 289984444906.dkr.ecr.us-east-1.amazonaws.com/ecommerce/product-service:latest
+          image: 289984444906.dkr.ecr.us-east-1.amazonaws.com/ecommerce/product-service:ccca31c5724078ad061900f7ae34b101e34312af
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
