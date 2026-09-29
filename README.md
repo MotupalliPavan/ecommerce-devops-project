@@ -1,112 +1,352 @@
-# Spring Boot Microservices E-Commerce DevOps Project
+# E-Commerce Microservices — DevOps & Kubernetes Project
 
-A production-style **Spring Boot microservices e-commerce application** deployed on Kubernetes and automated with GitHub Actions, Amazon ECR, AWS IAM OIDC, and an AWS EC2 environment running Kind Kubernetes.
+A production-style e-commerce application built with **Spring Boot microservices** and a **React frontend**, containerized with Docker and deployed to Kubernetes on an AWS EC2 instance.
 
 The project demonstrates a complete DevOps workflow:
+
+**GitHub → GitHub Actions → AWS IAM/OIDC → Amazon ECR → AWS Systems Manager → EC2 → Kubernetes**
+
+---
+
+## 🚀 Project Overview
+
+This project is a microservices-based e-commerce platform consisting of:
+
+- React frontend
+- API Gateway
+- User Service
+- Product Service
+- Inventory Service
+- Order Service
+- Email Service
+- MongoDB
+- PostgreSQL databases
+- Apache Kafka
+- Zookeeper
+- Elasticsearch
+- Logstash
+- Kibana
+- Filebeat
+
+The application is containerized using Docker and deployed to a Kubernetes cluster running with **Kind** on an AWS EC2 instance.
+
+The CI/CD pipeline automatically builds Docker images, pushes them to Amazon ECR, and deploys the new version to Kubernetes using AWS Systems Manager.
+
+---
+
+## 🏗️ Architecture
+
+```text
+                         ┌──────────────────────┐
+                         │      Developer       │
+                         │                      │
+                         │      git push        │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │       GitHub         │
+                         │      Repository      │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   GitHub Actions     │
+                         │                      │
+                         │  Build + Test        │
+                         │  Docker Build        │
+                         │  ECR Push            │
+                         └──────────┬───────────┘
+                                    │
+                              GitHub OIDC
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │       AWS IAM        │
+                         │                      │
+                         │ GitHub Actions Role  │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │     Amazon ECR       │
+                         │                      │
+                         │ Immutable SHA Images │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      AWS SSM         │
+                         │    Run Command       │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+              ┌─────────────────────────────────────────┐
+              │                AWS EC2                   │
+              │                                          │
+              │  Ubuntu + Docker + Kind + kubectl       │
+              │                                          │
+              │       ┌────────────────────────┐         │
+              │       │   Kubernetes / Kind    │         │
+              │       │                        │         │
+              │       │  API Gateway           │         │
+              │       │  User Service          │         │
+              │       │  Product Service       │         │
+              │       │  Inventory Service     │         │
+              │       │  Order Service         │         │
+              │       │  Email Service         │         │
+              │       │  React Frontend        │         │
+              │       │                        │         │
+              │       │  MongoDB               │         │
+              │       │  PostgreSQL            │         │
+              │       │  Kafka                 │         │
+              │       │  Zookeeper             │         │
+              │       │                        │         │
+              │       │  ELK + Filebeat        │         │
+              │       └────────────────────────┘         │
+              └─────────────────────────────────────────┘
+```
+
+---
+
+# 🧩 Microservices
+
+| Service | Technology | Purpose |
+|---|---|---|
+| API Gateway | Spring Boot | Routes client requests |
+| User Service | Spring Boot | User registration and authentication |
+| Product Service | Spring Boot | Product management |
+| Inventory Service | Spring Boot | Inventory management |
+| Order Service | Spring Boot | Order processing |
+| Email Service | Spring Boot | Email-related operations |
+| Frontend | React + Vite | User interface |
+
+---
+
+# 🗄️ Infrastructure
+
+| Component | Purpose |
+|---|---|
+| MongoDB | Product/service data |
+| PostgreSQL | User, order and inventory databases |
+| Kafka | Event/message streaming |
+| Zookeeper | Kafka coordination |
+| Elasticsearch | Log/data search |
+| Logstash | Log processing |
+| Kibana | Log visualization |
+| Filebeat | Log collection |
+| Kubernetes | Container orchestration |
+| Kind | Kubernetes cluster running on EC2 |
+
+---
+
+# ☁️ AWS Services
+
+The project uses the following AWS services:
+
+### Amazon EC2
+
+Hosts the Kubernetes environment.
+
+The EC2 instance runs:
+
+- Ubuntu
+- Docker
+- Kind
+- kubectl
+- AWS Systems Manager Agent
+
+### Amazon ECR
+
+Stores Docker images for:
+
+```text
+ecommerce/api-gateway
+ecommerce/email-service
+ecommerce/inventory-service
+ecommerce/order-service
+ecommerce/product-service
+ecommerce/user-service
+ecommerce/frontend
+```
+
+### AWS IAM
+
+Used for secure authentication and authorization.
+
+Two important roles are used:
+
+```text
+GitHubActions-EcommerceProject
+EcommerceEC2-SSM-Role
+```
+
+### GitHub OIDC
+
+GitHub Actions authenticates with AWS using OpenID Connect instead of storing long-lived AWS access keys inside GitHub.
+
+The workflow uses:
+
+```text
+GitHub Actions
+      ↓
+OIDC Token
+      ↓
+AWS STS
+      ↓
+IAM Role
+      ↓
+Temporary AWS Credentials
+```
+
+### AWS Systems Manager
+
+AWS SSM Run Command is used by GitHub Actions to remotely execute the Kubernetes deployment commands on the EC2 instance.
+
+This avoids exposing SSH credentials to the CI/CD pipeline.
+
+---
+
+# 🔄 CI/CD Pipeline
+
+Every push to the `main` branch triggers the GitHub Actions workflow.
 
 ```text
 Developer
     │
+    │ git push
     ▼
-GitHub Repository
+GitHub
     │
     ▼
 GitHub Actions
     │
-    │ OIDC
-    ▼
-AWS IAM Role
+    ├── Checkout source code
+    │
+    ├── Setup Java 21
+    │
+    ├── Authenticate to AWS using OIDC
+    │
+    ├── Authenticate with Amazon ECR
+    │
+    ├── Build Spring Boot services
+    │
+    ├── Build Docker images
+    │
+    ├── Push images to ECR
+    │
+    ├── Setup Node.js
+    │
+    ├── Build React frontend
+    │
+    ├── Build frontend Docker image
+    │
+    ├── Push frontend image to ECR
     │
     ▼
-Amazon ECR
+AWS SSM
     │
     ▼
-AWS EC2
+EC2
     │
     ▼
-Kind Kubernetes Cluster
+Kind Kubernetes
     │
-    ├── API Gateway
-    ├── Product Service
-    ├── Order Service
-    ├── Inventory Service
-    ├── User Service
-    ├── Email Service
+    ├── Update deployments
     │
-    ├── MongoDB
-    ├── PostgreSQL
-    ├── Kafka / Zookeeper
+    └── Wait for rollout
     │
-    └── Elasticsearch / Logstash / Kibana / Filebeat
+    ▼
+New application version
 ```
 
-## Project Overview
+---
 
-The application is composed of independently deployable Spring Boot microservices.
+# 🏷️ Immutable Docker Image Tags
 
-The API Gateway provides the external API entry point and routes requests to the appropriate microservice. JWT-based authentication is applied to the protected application routes.
+Docker images are tagged using the Git commit SHA.
 
-The infrastructure layer includes databases, Kafka messaging, and the Elastic Stack for centralized logging.
+Example:
 
-## Microservices
+```text
+289984444906.dkr.ecr.us-east-1.amazonaws.com/ecommerce/frontend:8bb9e6b1127f154e8a27d7324483bb610e877132
+```
 
-| Service | Responsibility | Port |
-|---|---|---:|
-| API Gateway | Request routing and authentication | 8090 |
-| Product Service | Product management | 8080 |
-| Order Service | Order processing | 8081 |
-| Inventory Service | Inventory and stock management | 8082 |
-| User Service | User registration and authentication | 8083 |
-| Email Service | Email notifications | 8084 |
+This provides traceability between:
 
-## Infrastructure
+```text
+Git Commit
+     ↓
+Docker Image
+     ↓
+ECR
+     ↓
+Kubernetes Deployment
+     ↓
+Running Pod
+```
 
-| Component | Purpose |
-|---|---|
-| MongoDB | Product-related NoSQL data |
-| PostgreSQL | Relational data for application services |
-| Kafka | Event streaming and asynchronous communication |
-| Zookeeper | Kafka coordination |
-| Elasticsearch | Log storage and indexing |
-| Logstash | Log processing |
-| Filebeat | Log collection |
-| Kibana | Log visualization |
+For example:
 
-## Technology Stack
+```text
+Git commit:
+8bb9e6b1127f154e8a27d7324483bb610e877132
 
-- Java 21
-- Spring Boot
-- Spring Cloud Gateway
-- Spring Cloud OpenFeign
-- Maven
-- Docker
-- Kubernetes
-- Kind
-- GitHub Actions
-- AWS IAM
-- GitHub OIDC
-- Amazon ECR
-- Amazon EC2
-- PostgreSQL
-- MongoDB
-- Apache Kafka
-- Elasticsearch
-- Logstash
-- Filebeat
-- Kibana
-- JWT
+ECR image:
+frontend:8bb9e6b1127f154e8a27d7324483bb610e877132
 
-## Repository Structure
+Kubernetes:
+frontend:8bb9e6b1127f154e8a27d7324483bb610e877132
+```
+
+This makes deployments reproducible and allows a specific version to be identified easily.
+
+---
+
+# 📁 Project Structure
 
 ```text
 E-commerce-project/
 │
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
 ├── api-gateway/
-├── product-service/
-├── order-service/
-├── inventory-service/
-├── user-service/
+│   ├── src/
+│   ├── pom.xml
+│   └── Dockerfile
+│
 ├── email-service/
+│   ├── src/
+│   ├── pom.xml
+│   └── Dockerfile
+│
+├── inventory-service/
+│   ├── src/
+│   ├── pom.xml
+│   └── Dockerfile
+│
+├── order-service/
+│   ├── src/
+│   ├── pom.xml
+│   └── Dockerfile
+│
+├── product-service/
+│   ├── src/
+│   ├── pom.xml
+│   └── Dockerfile
+│
+├── user-service/
+│   ├── src/
+│   ├── pom.xml
+│   └── Dockerfile
+│
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   ├── Dockerfile
+│   └── nginx.conf
 │
 ├── k8s/
 │   ├── kind/
@@ -115,298 +355,241 @@ E-commerce-project/
 │   │
 │   └── manifests/
 │       ├── applications/
+│       │   ├── api-gateway.yaml
+│       │   ├── email-service.yaml
+│       │   ├── frontend-deployment.yaml
+│       │   ├── frontend-service.yaml
+│       │   ├── inventory-service.yaml
+│       │   ├── order-service.yaml
+│       │   ├── product-service.yaml
+│       │   └── user-service.yaml
+│       │
 │       └── infrastructure/
+│           ├── elasticsearch.yaml
+│           ├── filebeat.yaml
+│           ├── kafka.yaml
+│           ├── kibana.yaml
+│           ├── logstash.yaml
+│           ├── mongodb.yaml
+│           ├── postgres-*.yaml
+│           └── zookeeper.yaml
 │
-├── assets/
-│   ├── Architecture.png
-│   └── Security.png
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml
+├── filebeat/
+├── logstash/
+│   └── pipeline/
 │
 ├── docker-compose.yml
 └── README.md
 ```
 
-## Architecture
+---
 
-![System Architecture](assets/Architecture.png)
+# 🐳 Running Locally
 
-## Security Architecture
+## Prerequisites
 
-![Security Architecture](assets/Security.png)
+Install:
 
-## CI/CD Pipeline
+- Java 21
+- Maven
+- Node.js 22
+- Docker
+- kubectl
+- Kind
+- Git
 
-The project uses GitHub Actions to automatically build and publish the microservice Docker images.
-
-```text
-Git Push
-   │
-   ▼
-GitHub Actions
-   │
-   ├── Checkout source
-   ├── Setup Java 21
-   ├── Authenticate using GitHub OIDC
-   │
-   ▼
-AWS IAM Role
-   │
-   ▼
-Amazon ECR
-   │
-   ├── Build API Gateway image
-   ├── Build Product Service image
-   ├── Build Order Service image
-   ├── Build Inventory Service image
-   ├── Build User Service image
-   └── Build Email Service image
-```
-
-The workflow uses **OIDC federation** instead of storing long-lived AWS access keys in GitHub.
-
-## AWS Configuration
-
-The deployment uses:
-
-- Amazon EC2
-- Amazon ECR
-- AWS IAM
-- GitHub Actions OIDC
-
-The GitHub Actions workflow assumes an AWS IAM role using GitHub's OIDC identity token.
-
-No AWS access keys are stored in the repository.
-
-### ECR repositories
-
-The six application images are stored in ECR:
-
-```text
-ecommerce/api-gateway
-ecommerce/product-service
-ecommerce/order-service
-ecommerce/inventory-service
-ecommerce/user-service
-ecommerce/email-service
-```
-
-Images are tagged with both:
-
-```text
-<commit-sha>
-latest
-```
-
-## Kubernetes Deployment
-
-The application runs inside a Kind Kubernetes cluster on the EC2 instance.
-
-Create the cluster:
+Clone the repository:
 
 ```bash
-./k8s/kind/create-kind-cluster.sh
+git clone https://github.com/MotupalliPavan/ecommerce-devops-project.git
+cd ecommerce-devops-project
 ```
 
-Check the cluster:
+---
+
+# ☸️ Kubernetes Cluster
+
+Create the Kind cluster:
+
+```bash
+cd k8s/kind
+./create-kind-cluster.sh
+```
+
+Verify:
 
 ```bash
 kubectl get nodes
 ```
 
-Check all workloads:
+Expected:
+
+```text
+NAME                          STATUS
+microservices-control-plane   Ready
+```
+
+---
+
+# 🚀 Deploy Kubernetes Resources
+
+Infrastructure manifests are located under:
+
+```text
+k8s/manifests/infrastructure/
+```
+
+Application manifests are located under:
+
+```text
+k8s/manifests/applications/
+```
+
+Apply the required manifests with:
+
+```bash
+kubectl apply -f k8s/manifests/infrastructure/
+```
+
+Then:
+
+```bash
+kubectl apply -f k8s/manifests/applications/
+```
+
+Check pods:
 
 ```bash
 kubectl get pods
 ```
 
-Check services:
+Check deployments:
 
 ```bash
-kubectl get svc
+kubectl get deployments
 ```
 
-## Pulling Images from Amazon ECR
+---
 
-The Kubernetes cluster uses an image pull secret to authenticate against private ECR.
+# 🔐 Amazon ECR Authentication
 
-Create the secret:
+The Kubernetes cluster uses an ECR registry secret for pulling private images.
+
+Example:
 
 ```bash
 kubectl create secret docker-registry ecr-registry-secret \
-  --docker-server=<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com \
+  --docker-server=289984444906.dkr.ecr.us-east-1.amazonaws.com \
   --docker-username=AWS \
-  --docker-password="$(aws ecr get-login-password --region <AWS_REGION>)"
+  --docker-password="$(aws ecr get-login-password --region us-east-1)"
 ```
 
-The application manifests reference ECR images:
-
-```yaml
-image: <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/ecommerce/product-service:latest
-imagePullPolicy: Always
-```
-
-and use:
+The Kubernetes deployments reference this secret through:
 
 ```yaml
 imagePullSecrets:
   - name: ecr-registry-secret
 ```
 
-## Deploy Infrastructure
+> ECR authentication tokens are temporary and need to be refreshed periodically.
 
-Infrastructure manifests are stored under:
+---
 
-```text
-k8s/manifests/infrastructure/
-```
+# 🔧 Useful Kubernetes Commands
 
-Deploy them with:
-
-```bash
-kubectl apply -f k8s/manifests/infrastructure/
-```
-
-## Deploy Microservices
-
-Application manifests are stored under:
-
-```text
-k8s/manifests/applications/
-```
-
-Deploy them with:
-
-```bash
-kubectl apply -f k8s/manifests/applications/
-```
-
-Verify:
+Check all pods:
 
 ```bash
 kubectl get pods
 ```
 
-All application services should eventually report:
-
-```text
-1/1 Running
-```
-
-## API Gateway
-
-The API Gateway runs on port `8090` inside its pod.
-
-Its Kubernetes Service exposes:
-
-```text
-Service Port: 80
-Target Port: 8090
-```
-
-The service is configured as a NodePort for EC2 access:
-
-```text
-80:30931
-```
-
-The NodePort is reachable from the Kind node:
-
-```text
-172.18.0.2:30931
-```
-
-## External Access Through Nginx
-
-Nginx runs on the EC2 host and acts as a reverse proxy.
-
-```text
-Internet
-   │
-   ▼
-EC2 :8080
-   │
-   ▼
-Nginx
-   │
-   ▼
-Kind Node :30931
-   │
-   ▼
-API Gateway :8090
-```
-
-Nginx configuration forwards requests to:
-
-```text
-172.18.0.2:30931
-```
-
-The application can therefore be accessed through:
-
-```text
-http://<EC2_PUBLIC_IP>:8080
-```
-
-## API Routes
-
-The API Gateway defines the following application routes:
-
-```text
-/ecomapi/products/**
-/ecomapi/orders/**
-/ecomapi/inventory/**
-/ecomapi/auth/**
-```
-
-The protected application routes require JWT authentication.
-
-For example:
+Check deployments:
 
 ```bash
-curl -i http://localhost:8080/ecomapi/products
+kubectl get deployments
 ```
 
-Without a valid JWT, the expected response is:
+Check services:
 
-```text
-HTTP/1.1 401 Unauthorized
+```bash
+kubectl get services
 ```
 
-This confirms that the request successfully reached the API Gateway and was processed by the authentication filter.
+Check a specific deployment:
 
-The root URL:
-
-```text
-/
+```bash
+kubectl describe deployment frontend
 ```
 
-does not have an application route and therefore returns:
+Check logs:
 
-```text
-404 Not Found
+```bash
+kubectl logs deployment/frontend
 ```
 
-This is expected behavior for the current backend-only project.
+Check the image currently configured:
 
-## Swagger / API Documentation
-
-The project uses Springdoc/OpenAPI.
-
-Individual services expose API documentation, and the Gateway contains aggregation routes such as:
-
-```text
-/aggregate/product-service/v3/api-docs
-/aggregate/order-service/v3/api-docs
-/aggregate/inventory-service/v3/api-docs
-/aggregate/user-service/v3/api-docs
+```bash
+kubectl get deployment frontend \
+  -o jsonpath='{.spec.template.spec.containers[0].image}'
+echo
 ```
 
-## Monitoring and Logging
+Check rollout:
 
-The project uses the Elastic Stack:
+```bash
+kubectl rollout status deployment/frontend
+```
+
+---
+
+# 🔁 Rolling Deployment
+
+The CD pipeline updates each Kubernetes deployment using:
+
+```bash
+kubectl set image deployment/<service>
+```
+
+Then verifies the rollout:
+
+```bash
+kubectl rollout status deployment/<service> --timeout=180s
+```
+
+The pipeline fails if a rollout does not complete successfully.
+
+This prevents GitHub Actions from reporting a successful deployment when Kubernetes is unable to complete the update.
+
+---
+
+# 🔙 Rollback
+
+Kubernetes maintains deployment revision history.
+
+View revisions:
+
+```bash
+kubectl rollout history deployment/frontend
+```
+
+Rollback:
+
+```bash
+kubectl rollout undo deployment/frontend
+```
+
+Check the rollout:
+
+```bash
+kubectl rollout status deployment/frontend
+```
+
+---
+
+# 📊 Observability
+
+The project includes an ELK-based logging stack:
 
 ```text
 Application Pods
@@ -424,127 +607,232 @@ Application Pods
     Kibana
 ```
 
-Check the logging components:
+Components:
 
-```bash
-kubectl get pods | grep -E "filebeat|logstash|elasticsearch|kibana"
-```
+- Filebeat — collects logs
+- Logstash — processes logs
+- Elasticsearch — stores/searches logs
+- Kibana — visualizes logs
 
-Kibana can be accessed through Kubernetes port forwarding when required:
+---
 
-```bash
-kubectl port-forward svc/kibana 5601:5601
-```
+# 🌐 Frontend
 
-Then open:
+The React frontend is built using Vite and served using Nginx.
+
+Frontend API requests use:
 
 ```text
-http://localhost:5601
+/ecomapi/
 ```
 
-## Useful Kubernetes Commands
+Nginx forwards these requests to the API Gateway.
 
-View all pods:
+```text
+Browser
+   │
+   ▼
+Frontend Nginx
+   │
+   │ /ecomapi/
+   ▼
+API Gateway
+   │
+   ├── User Service
+   ├── Product Service
+   ├── Inventory Service
+   └── Order Service
+```
+
+---
+
+# 🔒 Security
+
+The project uses several security practices:
+
+### GitHub → AWS
+
+No long-lived AWS access keys are stored in GitHub Actions.
+
+GitHub Actions uses:
+
+```text
+GitHub OIDC
+     ↓
+AWS STS
+     ↓
+IAM Role
+```
+
+### AWS SSM
+
+Deployment commands are executed through AWS Systems Manager instead of storing SSH credentials in the CI/CD pipeline.
+
+### Secrets
+
+Application secrets should be supplied through Kubernetes Secrets, environment variables, or a dedicated secrets-management solution.
+
+**Never commit real credentials, passwords, API keys, or tokens to Git.**
+
+---
+
+# 🧪 CI/CD Verification
+
+A successful deployment can be verified using:
 
 ```bash
 kubectl get pods
 ```
 
-View services:
-
-```bash
-kubectl get svc
-```
-
-View deployments:
-
-```bash
-kubectl get deployments
-```
-
-View application logs:
-
-```bash
-kubectl logs deployment/api-gateway
-```
-
-Describe a pod:
-
-```bash
-kubectl describe pod <pod-name>
-```
-
-Check API Gateway endpoints:
-
-```bash
-kubectl get endpoints api-gateway
-```
-
-Check NodePort:
-
-```bash
-kubectl get svc api-gateway
-```
-
-## Security Notes
-
-Never commit:
-
-- AWS access keys
-- AWS secret keys
-- GitHub tokens
-- JWT secrets
-- Database passwords
-- SMTP passwords
-- API keys
-- Private certificates
-
-Use AWS IAM roles and GitHub OIDC rather than long-lived AWS credentials wherever possible.
-
-Sensitive configuration should be supplied through environment variables, Kubernetes Secrets, AWS Secrets Manager, or another appropriate secret-management mechanism.
-
-## Current Deployment Model
-
-The current portfolio deployment demonstrates:
+Example:
 
 ```text
-Source Code
+NAME                              READY   STATUS
+api-gateway-xxxxx                 1/1     Running
+email-service-xxxxx               1/1     Running
+frontend-xxxxx                    1/1     Running
+inventory-service-xxxxx           1/1     Running
+order-service-xxxxx               1/1     Running
+product-service-xxxxx             1/1     Running
+user-service-xxxxx                1/1     Running
+```
+
+Verify the deployed frontend image:
+
+```bash
+kubectl get deployment frontend \
+  -o jsonpath='{.spec.template.spec.containers[0].image}'
+echo
+```
+
+Example:
+
+```text
+289984444906.dkr.ecr.us-east-1.amazonaws.com/ecommerce/frontend:8bb9e6b1127f154e8a27d7324483bb610e877132
+```
+
+This confirms that Kubernetes is running the image corresponding to the Git commit.
+
+---
+
+# 📌 DevOps Concepts Demonstrated
+
+This project demonstrates practical experience with:
+
+- Linux
+- Git
+- GitHub
+- GitHub Actions
+- CI/CD
+- Docker
+- Docker image versioning
+- Amazon ECR
+- AWS IAM
+- GitHub OIDC
+- AWS STS
+- AWS Systems Manager
+- Amazon EC2
+- Kubernetes
+- Kind
+- kubectl
+- Kubernetes Deployments
+- Kubernetes Services
+- Kubernetes Secrets
+- Rolling deployments
+- Rollbacks
+- Microservices
+- Spring Boot
+- React
+- Nginx
+- MongoDB
+- PostgreSQL
+- Apache Kafka
+- Zookeeper
+- Elasticsearch
+- Logstash
+- Kibana
+- Filebeat
+
+---
+
+# 🎯 Deployment Flow
+
+The complete deployment process is:
+
+```text
+1. Developer modifies code
+          ↓
+2. git push origin main
+          ↓
+3. GitHub Actions starts
+          ↓
+4. GitHub authenticates to AWS using OIDC
+          ↓
+5. Maven builds Spring Boot services
+          ↓
+6. Docker images are created
+          ↓
+7. Images are tagged with Git SHA
+          ↓
+8. Images are pushed to Amazon ECR
+          ↓
+9. React frontend is built
+          ↓
+10. Frontend image is pushed to ECR
+          ↓
+11. GitHub Actions calls AWS SSM
+          ↓
+12. SSM executes deployment on EC2
+          ↓
+13. kubectl updates Kubernetes deployments
+          ↓
+14. Kubernetes performs rolling updates
+          ↓
+15. rollout status verifies deployment
+          ↓
+16. New application version becomes available
+```
+
+---
+
+# 🏆 Project Result
+
+The project demonstrates a complete automated DevOps workflow from source-code change to a running Kubernetes application.
+
+A simple frontend change can travel through the complete pipeline:
+
+```text
+Code Change
     ↓
 GitHub
     ↓
 GitHub Actions
     ↓
-GitHub OIDC
-    ↓
-AWS IAM
+AWS OIDC
     ↓
 Amazon ECR
     ↓
-EC2
+AWS SSM
     ↓
-Docker
+EC2
     ↓
 Kind Kubernetes
     ↓
-Microservices
+Rolling Deployment
     ↓
-Nginx
-    ↓
-External API Access
+Running Application
 ```
 
-## Project Status
+The deployment is traceable using Git commit SHA tags, allowing the running Kubernetes workload to be associated with the exact source-code version that produced the Docker image.
 
-The application microservices and Kubernetes infrastructure are deployed and running on the EC2-based Kind cluster.
+---
 
-The CI/CD pipeline successfully authenticates GitHub Actions to AWS through OIDC and pushes application images to Amazon ECR.
-
-The Kubernetes workloads pull the application images from private ECR repositories.
-
-Email delivery through an external SMTP provider is not required for the core deployment demonstration.
-
-## Author
+## 👨‍💻 Author
 
 **Pavan Motupalli**
 
-DevOps / Cloud / Kubernetes portfolio project.
+DevOps / Cloud / Kubernetes Project
+
+GitHub:
+
+https://github.com/MotupalliPavan/ecommerce-devops-project
