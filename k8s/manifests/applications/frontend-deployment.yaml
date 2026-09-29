@@ -14,9 +14,11 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+        - name: ecr-registry-secret
       containers:
         - name: frontend
-          image: ecommerce-frontend:v3
-          imagePullPolicy: Never
+          image: 289984444906.dkr.ecr.us-east-1.amazonaws.com/ecommerce/frontend:aea8d786c883c6aae847f4683c1d4a951cd46783
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
