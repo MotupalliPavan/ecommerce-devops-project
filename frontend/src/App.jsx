@@ -15,7 +15,7 @@ function Navbar() {
   return (
     <nav className="navbar">
       <Link to="/" className="logo">
-        E-Commerce
+        WildKart
       </Link>
 
       <div className="nav-links">
@@ -43,7 +43,7 @@ function Home() {
           <p className="eyebrow">SPRING BOOT • KUBERNETES • AWS</p>
 
           <h1>
-            Shop smarter.
+            Shop smarter🚀.
             <br />
             Build better.
           </h1>
